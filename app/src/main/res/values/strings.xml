@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Переводчик</string>
+    <string name="translate">Перевод</string>
+    <string name="dictionary">Словарь</string>
+    <string name="source_language">Русский</string>
+    <string name="target_language">Английский</string>
+    <string name="dictionary_search_hint">Найти в словаре</string>
+    <string name="empty_dictionary">Нет переводов в словаре</string>
+    <string name="write_word">Введите слово или текст</string>
+</resources>
