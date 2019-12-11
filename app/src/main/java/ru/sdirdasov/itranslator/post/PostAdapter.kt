@@ -1,5 +1,6 @@
 package ru.sdirdasov.itranslator.post
 
+import android.annotation.SuppressLint
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
@@ -20,22 +21,13 @@ class PostAdapter(private val originalItems: ArrayList<Dictionary>) :
         {
             override fun performFiltering(constraint: CharSequence): FilterResults {
                 val results = FilterResults()
-                val filteredList = ArrayList<Dictionary>()
-
-                if (constraint == "" || constraint.toString().trim { it <= ' ' }.isEmpty()) {
-                    results.values = originalItems
-                } else {
-                    val textToFilter = constraint.toString().toLowerCase(Locale.getDefault())
-                    for (word in originalItems) {
-                        if (word.word!!.length >= textToFilter.length && word.word!!.toLowerCase(Locale.getDefault()).contains(
-                                textToFilter
-                            )
-                        ) {
-                            filteredList.add(word)
-                        }
+                when {
+                    constraint.isEmpty() || constraint.toString().trim { it <= ' ' }.isEmpty() -> {
+                        results.values = originalItems
                     }
-                    results.values = filteredList
+                    else -> results.values = getFilteredList(constraint)
                 }
+
                 return results
             }
 
@@ -52,23 +44,18 @@ class PostAdapter(private val originalItems: ArrayList<Dictionary>) :
         filteredItems.addAll(originalItems)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PostViewHolder
-    {
-        val inflater = LayoutInflater.from(parent.context)
-        val view = inflater.inflate(R.layout.item_post, parent, false)
-
-        return PostViewHolder(view)
-    }
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = PostViewHolder(
+        LayoutInflater.from(parent.context).inflate(
+            R.layout.item_post, parent, false
+        )
+    )
 
     override fun onBindViewHolder(holder: PostViewHolder, position: Int)
     {
         holder.bind(position)
     }
 
-    override fun getItemCount(): Int
-    {
-        return filteredItems.size
-    }
+    override fun getItemCount() = filteredItems.size
 
     inner class PostViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
     {
@@ -76,11 +63,28 @@ class PostAdapter(private val originalItems: ArrayList<Dictionary>) :
         var translationView: TextView = itemView.findViewById(R.id.translation)
         var language: TextView = itemView.findViewById(R.id.languages)
 
+        @SuppressLint("SetTextI18n")
         fun bind(position: Int) {
             val item = filteredItems[position]
             textView.text = item.word
             translationView.text = item.translation
-            language.text = """${item.sourceLanguage}-${item.targetLanguage}"""
+            language.text = "${item.sourceLanguage}-${item.targetLanguage}"
         }
+    }
+
+    fun getFilteredList(constraint: CharSequence): ArrayList<Dictionary> {
+
+        val filteredList = ArrayList<Dictionary>()
+        val textToFilter = constraint.toString().toLowerCase(Locale.getDefault())
+
+        for (word in originalItems) {
+            if (word.word.length >= textToFilter.length && word.word.toLowerCase(Locale.getDefault()).contains(
+                    textToFilter
+                )
+            ) {
+                filteredList.add(word)
+            }
+        }
+        return filteredList
     }
 }

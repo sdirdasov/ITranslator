@@ -3,9 +3,10 @@ package ru.sdirdasov.itranslator
 import ru.sdirdasov.itranslator.utils.Languages
 import java.util.*
 
-class Dictionary internal constructor(
-        var word: String?,
-        var translation: String?,
+@Suppress("SENSELESS_COMPARISON")
+class Dictionary(
+        var word: String,
+        var translation: String,
         sourcePosition: Int,
         targetPosition: Int
     )
@@ -33,13 +34,9 @@ class Dictionary internal constructor(
         }
     }
 
-    private fun getCodeENtoUpperCase(position: Int):String
-    {
-        return Languages.getCodeEN(position).toUpperCase(Locale.getDefault())
-    }
+    private fun getCodeENtoUpperCase(position: Int) = Languages.getCodeEN(position)
+        .toUpperCase(Locale.getDefault())
 
-    private fun getCodeRUtoUpperCase(position: Int):String
-    {
-        return Languages.getCodeRU(position).toUpperCase(Locale.getDefault())
-    }
+    private fun getCodeRUtoUpperCase(position: Int) = Languages.getCodeRU(position)
+        .toUpperCase(Locale.getDefault())
 }

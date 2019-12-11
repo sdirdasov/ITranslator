@@ -19,39 +19,38 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import ru.sdirdasov.itranslator.network.PostAPI
 import ru.sdirdasov.itranslator.post.PostTranslated
-import ru.sdirdasov.itranslator.utils.DATABASE_DICTIONARY
-import ru.sdirdasov.itranslator.utils.Languages
+import ru.sdirdasov.itranslator.utils.*
 import java.util.*
 import java.util.concurrent.TimeUnit
 
 class BaseView : Fragment()
 {
-    private var viewBase: View? = null
-    private var langaugeIn: Spinner? = null
-    private var languageOut: Spinner? = null
-    private var textToTranslate: EditText? = null
+    lateinit var baseView: View
+    lateinit var langaugeIn: Spinner
+    lateinit var languageOut: Spinner
+    lateinit var textToTranslate: EditText
 
-    private var translatedText: TextView? = null
+    lateinit var translatedText: TextView
     private var noTranslate: Boolean = false
 
-     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
+     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View
      {
-        viewBase = inflater.inflate(R.layout.baseview_fragment, container, false)
+        baseView = inflater.inflate(R.layout.baseview_fragment, container, false)
 
-        langaugeIn = viewBase!!.findViewById<View>(R.id.languageIn) as Spinner
-        languageOut = viewBase!!.findViewById<View>(R.id.languageOut) as Spinner
+        langaugeIn = baseView.findViewById<View>(R.id.languageIn) as Spinner
+        languageOut = baseView.findViewById<View>(R.id.languageOut) as Spinner
 
-        textToTranslate = viewBase!!.findViewById<View>(R.id.textTranslate) as EditText
-        textToTranslate!!.movementMethod = ScrollingMovementMethod()
-        textToTranslate!!.isVerticalScrollBarEnabled = true
+        textToTranslate = baseView.findViewById<View>(R.id.textTranslate) as EditText
+        textToTranslate.movementMethod = ScrollingMovementMethod()
+        textToTranslate.isVerticalScrollBarEnabled = true
 
-        translatedText = viewBase!!.findViewById<View>(R.id.translatedText) as TextView
-        translatedText!!.movementMethod = ScrollingMovementMethod()
-        translatedText!!.isVerticalScrollBarEnabled = true
+        translatedText = baseView.findViewById<View>(R.id.translatedText) as TextView
+        translatedText.movementMethod = ScrollingMovementMethod()
+        translatedText.isVerticalScrollBarEnabled = true
 
         setSharedPreferences()
 
-        return viewBase
+        return baseView
     }
 
      override fun onViewCreated(view: View, savedInstanceState: Bundle?)
@@ -63,43 +62,46 @@ class BaseView : Fragment()
 
          dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
 
-         langaugeIn!!.adapter = dataAdapter
-         languageOut!!.adapter = dataAdapter
-         languageOut!!.setSelection(1)
+         langaugeIn.adapter = dataAdapter
+         languageOut.adapter = dataAdapter
+         languageOut.setSelection(1)
 
-         RxTextView.textChanges(textToTranslate!!)
+         RxTextView.textChanges(textToTranslate)
              .filter { charSequence -> charSequence.isNotEmpty() }
              .debounce(1000, TimeUnit.MILLISECONDS).subscribe { charSequence -> translate(charSequence.toString().trim { it <= ' ' }) }
 
-         RxTextView.textChanges(textToTranslate!!)
+         RxTextView.textChanges(textToTranslate)
              .filter { charSequence -> charSequence.isEmpty() }
-             .subscribe { activity!!.runOnUiThread {} }
+             .subscribe { activity?.runOnUiThread {} }
 
         super.onViewCreated(view, savedInstanceState)
     }
 
     override fun onDestroyView()
     {
-        val sharedPref = activity!!.getSharedPreferences("default", Context.MODE_PRIVATE)
-        val editor = sharedPref.edit()
-        editor.putInt("selection1", langaugeIn!!.selectedItemPosition)
-        editor.putInt("selection2", languageOut!!.selectedItemPosition)
-        editor.putString("textToTranslate", textToTranslate!!.text.toString())
-        editor.putString("translatedText", translatedText!!.text.toString())
-        editor.apply()
+        val sharedPref = activity?.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        val editor = sharedPref?.edit()
+
+        if (editor != null) {
+            editor.putInt(PREF_FIRST_SELECTION, langaugeIn.selectedItemPosition)
+            editor.putInt(PREF_SECOND_SELECTION, languageOut.selectedItemPosition)
+            editor.putString(PREF_TEXT_TO_TRANSLATED, textToTranslate.text.toString())
+            editor.putString(PREF_TRANSLATED_TEXT, translatedText.text.toString())
+            editor.apply()
+        }
         super.onDestroyView()
     }
 
     fun addToDictionary()
     {
-        val text = textToTranslate!!.text.toString().trim { it <= ' ' }
-        if (text != "") {
-            val dataBaseHelper = AppDatabase(viewBase!!.context, DATABASE_DICTIONARY)
+        val text = textToTranslate.text.toString().trim { it <= ' ' }
+        if (text.isNotEmpty()) {
+            val dataBaseHelper = AppDatabase(baseView.context, DATABASE_DICTIONARY)
             dataBaseHelper.insertWord(
                 Dictionary(
-                    textToTranslate!!.text.toString().trim { it <= ' ' },
-                    translatedText!!.text.toString(), langaugeIn!!.selectedItemPosition,
-                    languageOut!!.selectedItemPosition
+                    textToTranslate.text.toString().trim { it <= ' ' },
+                    translatedText.text.toString(), langaugeIn.selectedItemPosition,
+                    languageOut.selectedItemPosition
                 )
             )
             dataBaseHelper.close()
@@ -108,18 +110,18 @@ class BaseView : Fragment()
 
     private fun setSharedPreferences()
     {
-        val sharedPref = activity!!.getSharedPreferences("default", Context.MODE_PRIVATE)
-        val text = sharedPref.getString("textToTranslate", "")
-        val translation = sharedPref.getString("translatedText", "")
-        val selection1 = sharedPref.getInt("selection1", 0)
-        val selection2 = sharedPref.getInt("selection2", 1)
+        val sharedPref = activity?.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        val text = sharedPref?.getString(PREF_TEXT_TO_TRANSLATED, "")?: ""
+        val translation = sharedPref?.getString(PREF_TRANSLATED_TEXT, "")?: ""
+        val selection1 = sharedPref?.getInt(PREF_FIRST_SELECTION, 0)?: 0
+        val selection2 = sharedPref?.getInt(PREF_SECOND_SELECTION, 1)?: 1
 
-        if (text != "") {
+        if (text.isNotEmpty()) {
             noTranslate = true
-            textToTranslate!!.setText(text)
-            langaugeIn!!.setSelection(selection1)
-            languageOut!!.setSelection(selection2)
-            translatedText!!.text = translation
+            textToTranslate.setText(text)
+            langaugeIn.setSelection(selection1)
+            languageOut.setSelection(selection2)
+            translatedText.text = translation
         }
     }
 
@@ -130,23 +132,23 @@ class BaseView : Fragment()
             return
         }
 
-        val tokenAPI = "trnsl.1.1.20191101T120114Z.b016787b6c488297.28e0a49d6c835f41d3a8ced40f99c55ab3d33b37"
-        val firstLanguage = langaugeIn!!.selectedItem.toString()
-        val secondLanguage = languageOut!!.selectedItem.toString()
+        val tokenAPI = TOKEN_API_YANDEX
+        val firstLanguage = langaugeIn.selectedItem.toString()
+        val secondLanguage = languageOut.selectedItem.toString()
 
-        val query = Retrofit.Builder().baseUrl("https://translate.yandex.net/")
+        val query = Retrofit.Builder().baseUrl(BASE_URL_YANDEX)
             .addConverterFactory(GsonConverterFactory.create()).build()
         val postAPI = query.create(PostAPI::class.java)
         val call = postAPI.getPosts(
             tokenAPI, text,
-            getLanguageCode(firstLanguage) + "-" + getLanguageCode(secondLanguage)
+            "${getLanguageCode(firstLanguage)}-${getLanguageCode(secondLanguage)}"
         )
 
         call.enqueue(object : Callback<PostTranslated> {
             override fun onResponse(call: Call<PostTranslated>, response: Response<PostTranslated>) {
                 if (response.isSuccessful) {
-                    activity!!.runOnUiThread {
-                        translatedText!!.text = response.body()!!.text!![0]
+                    activity?.runOnUiThread {
+                        translatedText.text = response.body()?.text!![0]
                         addToDictionary()
                     }
                 }
